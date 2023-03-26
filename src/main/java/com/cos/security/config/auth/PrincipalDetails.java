@@ -2,6 +2,7 @@ package com.cos.security.config.auth;
 
 import com.cos.security.model.User;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -14,10 +15,22 @@ import java.util.Map;
 // Security Session => Authentication => UserDetails(여기서는 PrincipalDeatils 가 된다.)
 
 @Data
-@RequiredArgsConstructor
+@NoArgsConstructor
 public class PrincipalDetails implements UserDetails, OAuth2User {
 
-    private final User user;  //콤포지션
+    // 일반 로그인
+    private User user;  //콤포지션
+    //OAuth 로그인
+    private Map<String, Object> attributes;
+
+    public PrincipalDetails(User user) {
+        this.user = user;
+    }
+
+    public PrincipalDetails(User user, Map<String, Object> attributes) {
+        this.user = user;
+        this.attributes = attributes;
+    }
 
     // UserDetails 오버라이딩
     // 해당 User의 권한을 리턴하는 곳!!
@@ -71,11 +84,11 @@ public class PrincipalDetails implements UserDetails, OAuth2User {
     // OAuth2User 오버라이딩
     @Override
     public Map<String, Object> getAttributes() {
-        return null;
+        return attributes;
     }
 
     @Override
     public String getName() {
-        return null;
+        return null;    // 사용하지 않을 함수라 null로 두었다.
     }
 }
