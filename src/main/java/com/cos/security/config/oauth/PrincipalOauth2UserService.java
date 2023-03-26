@@ -1,6 +1,9 @@
 package com.cos.security.config.oauth;
 
 import com.cos.security.config.auth.PrincipalDetails;
+import com.cos.security.config.oauth.provider.FacebookUserInfo;
+import com.cos.security.config.oauth.provider.GoogleUserInfo;
+import com.cos.security.config.oauth.provider.OAuth2UserInfo;
 import com.cos.security.model.User;
 import com.cos.security.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -23,8 +26,8 @@ public class PrincipalOauth2UserService extends DefaultOAuth2UserService {
     // 함수 종료시 @AuthenticationPrincipal 어노테이션이 만들어진
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
-        System.out.println("userRequest : " + userRequest.getClientRegistration()); // registrationId로 어떤 OAuth로 로그인 했는지 확인 가능
-        System.out.println("userRequest : " + userRequest.getAccessToken().getTokenValue());
+        System.out.println("getClientRegistration : " + userRequest.getClientRegistration()); // registrationId로 어떤 OAuth로 로그인 했는지 확인 가능
+        System.out.println("getTokenValue : " + userRequest.getAccessToken().getTokenValue());
 
         OAuth2User oAuth2User = super.loadUser(userRequest);
         // 구글 로그인 버튼 클릭 -> 구글 로그인 창 -> 로그인 완료 -> code를 리턴(OAuth-Client라이브러리) -> AccessToken 요청
@@ -32,11 +35,21 @@ public class PrincipalOauth2UserService extends DefaultOAuth2UserService {
         System.out.println("getAttribute : " + oAuth2User.getAttributes());
 
         // 회원가입을 강제로 진행
-        String provider  = userRequest.getClientRegistration().getRegistrationId();   // google
-        String providerId = oAuth2User.getAttribute("sub");
+        OAuth2UserInfo oAuth2UserInfo = null;
+        if (userRequest.getClientRegistration().getRegistrationId().equals("google")) {
+            System.out.println("구글 로그인 요청");
+            oAuth2UserInfo = new GoogleUserInfo(oAuth2User.getAttributes());
+        }
+
+        if (userRequest.getClientRegistration().getRegistrationId().equals("facebook")) {
+            System.out.println("페이스북 로그인 요청");
+            oAuth2UserInfo = new FacebookUserInfo(oAuth2User.getAttributes());
+        }
+        String provider  = oAuth2UserInfo.getProvider();
+        String providerId = oAuth2UserInfo.getProviderId();
         String username = provider + "_" + providerId;
         String password = bCryptPasswordEncoder.encode("아무거나");
-        String email = oAuth2User.getAttribute("email");
+        String email = oAuth2UserInfo.getEmail();
         String role = "ROLE_USER";
 
         User userEntity = userRepository.findByUsername(username);
